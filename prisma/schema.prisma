@@ -64,7 +64,7 @@ model Peca {
   valorCusto      Float
   valorVenda      Float
   status          String   @default("disponivel") // "disponivel", "vendida", "curadoria"
-  fotos           String @db.Text // Array de URLs das fotos
+  fotos           fotos String[] // Array de URLs das fotos
   observacoes     String?
   
   // Relacionamentos
