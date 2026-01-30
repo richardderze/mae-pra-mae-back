@@ -1,7 +1,6 @@
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
-const path = require('path');
 
 dotenv.config();
 
@@ -12,9 +11,6 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Servir arquivos estáticos da pasta uploads
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-
 // Importar rotas
 const authRoutes = require('./routes/auth');
 const pecasRoutes = require('./routes/pecas');
@@ -24,7 +20,6 @@ const tamanhosRoutes = require('./routes/tamanhos');
 const vendasRoutes = require('./routes/vendas');
 const pagamentosRoutes = require('./routes/pagamentos');
 const clientesRoutes = require('./routes/clientes');
-const uploadRoutes = require('./routes/upload');
 
 // Registrar rotas
 app.use('/api/auth', authRoutes);
@@ -35,7 +30,6 @@ app.use('/api/tamanhos', tamanhosRoutes);
 app.use('/api/vendas', vendasRoutes);
 app.use('/api/pagamentos', pagamentosRoutes);
 app.use('/api/clientes', clientesRoutes);
-app.use('/api/upload', uploadRoutes);
 
 // Rota de health check
 app.get('/api/health', (req, res) => {
@@ -60,8 +54,7 @@ app.get('/', (req, res) => {
       tamanhos: '/api/tamanhos',
       vendas: '/api/vendas',
       pagamentos: '/api/pagamentos',
-      clientes: '/api/clientes',
-      upload: '/api/upload'
+      clientes: '/api/clientes'
     }
   });
 });
@@ -87,7 +80,6 @@ const PORT = process.env.PORT || 3001;
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Servidor rodando na porta ${PORT}`);
   console.log(`📅 Iniciado em: ${new Date().toLocaleString('pt-BR')}`);
-  console.log(`🌍 Ambiente: ${process.env.NODE_ENV || 'development'}`);
 });
 
 // Tratamento de encerramento gracioso
