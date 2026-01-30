@@ -5,18 +5,17 @@ const { authMiddleware, adminMiddleware } = require('../middleware/auth');
 
 const prisma = new PrismaClient();
 
-// Listar todas as marcas ativas
-router.get('/', authMiddleware, async (req, res) => {
+// Listar todas as marcas (inclusive inativas)
+router.get('/', async (req, res) => {
   try {
     const marcas = await prisma.marca.findMany({
-      where: { ativo: true },
       orderBy: { nome: 'asc' }
+      // NÃO filtre por ativo aqui - retorna TODAS
     });
-
     res.json(marcas);
-  } catch (erro) {
-    console.error('Erro ao listar marcas:', erro);
-    res.status(500).json({ erro: 'Erro ao listar marcas' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ erro: 'Erro ao buscar marcas' });
   }
 });
 
