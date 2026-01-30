@@ -3,6 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const sacolinhasRoutes = require('./routes/sacolinhas');
+const clientesRoutes = require('./routes/clientes');
 
 
 const app = express();
@@ -24,6 +25,7 @@ app.use('/api/tamanhos', require('./routes/tamanhos'));
 app.use('/api/pecas', require('./routes/pecas'));
 app.use('/api/vendas', require('./routes/vendas'));
 app.use('/api/pagamentos', require('./routes/pagamentos'));
+app.use('/api/clientes', clientesRoutes);
 
 // Rota de teste
 app.get('/api/health', (req, res) => {
