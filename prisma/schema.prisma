@@ -136,22 +136,6 @@ model Cliente {
   compras       Venda[]  @relation("ClienteCompras")
 }
 
-model Venda {
-  id              Int      @id @default(autoincrement())
-  dataVenda       DateTime @default(now())
-  valorVendido    Float
-  
-  pecaId          Int
-  peca            Peca     @relation(fields: [pecaId], references: [id])
-  
-  clienteId       Int?
-  cliente         Cliente? @relation("ClienteCompras", fields: [clienteId], references: [id])
-  
-  pagamento       Pagamento?
-  
-  criadoEm        DateTime @default(now())
-}
-
 model Sacolinha {
   id              Int      @id @default(autoincrement())
   clienteId       Int
