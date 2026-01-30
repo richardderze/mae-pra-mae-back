@@ -4,6 +4,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { PrismaClient } = require('@prisma/client');
 
+
 const prisma = new PrismaClient();
 
 // Login
@@ -87,5 +88,46 @@ router.post('/setup-admin', async (req, res) => {
     res.status(500).json({ erro: 'Erro ao criar admin' });
   }
 });
+
+router.post('/login-cliente', async (req, res) => {
+  try {
+    const { email, senha } = req.body;
+    
+    const cliente = await prisma.cliente.findUnique({
+      where: { email }
+    });
+    
+    if (!cliente) {
+      return res.status(401).json({ erro: 'Email ou senha inválidos' });
+    }
+    
+    const senhaValida = await bcrypt.compare(senha, cliente.senha);
+    if (!senhaValida) {
+      return res.status(401).json({ erro: 'Email ou senha inválidos' });
+    }
+    
+    if (!cliente.ativo) {
+      return res.status(403).json({ erro: 'Cliente inativo' });
+    }
+    
+    const token = jwt.sign(
+      { id: cliente.id, tipo: 'cliente' },
+      process.env.JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+    
+    const { senha: _, ...clienteSemSenha } = cliente;
+    
+    res.json({
+      token,
+      cliente: clienteSemSenha
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ erro: 'Erro ao fazer login' });
+  }
+});
+
+
 
 module.exports = router;
