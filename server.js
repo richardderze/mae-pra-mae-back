@@ -44,3 +44,10 @@ app.listen(PORT, () => {
   console.log(`🚀 Servidor rodando na porta ${PORT}`);
   console.log(`📍 http://localhost:${PORT}`);
 });
+
+// Adicione no topo com as outras importações
+const clientesRoutes = require('./routes/clientes');
+
+// Adicione com as outras rotas
+app.use('/api/clientes', clientesRoutes);
+
