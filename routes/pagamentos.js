@@ -252,4 +252,83 @@ router.put('/:id', authMiddleware, adminMiddleware, async (req, res) => {
   }
 });
 
+// Marcar múltiplos pagamentos como pagos
+router.post('/marcar-pago', authMiddleware, adminMiddleware, async (req, res) => {
+  try {
+    const { ids } = req.body;
+    
+    if (!ids || !Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ erro: 'IDs inválidos' });
+    }
+    
+    // Atualizar todos os pagamentos de uma vez
+    await prisma.pagamento.updateMany({
+      where: {
+        id: { in: ids }
+      },
+      data: {
+        pago: true,
+        dataPagamento: new Date()
+      }
+    });
+    
+    res.json({ mensagem: `${ids.length} pagamento(s) marcado(s) como pago(s)` });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ erro: 'Erro ao marcar pagamentos como pagos' });
+  }
+});
+
+
+// Gerar recibo de um parceiro
+router.get('/recibo/:parceiroId', authMiddleware, adminMiddleware, async (req, res) => {
+  try {
+    const parceiroId = parseInt(req.params.parceiroId);
+    
+    const parceiro = await prisma.parceiro.findUnique({
+      where: { id: parceiroId },
+      include: { usuario: true }
+    });
+    
+    if (!parceiro) {
+      return res.status(404).json({ erro: 'Parceiro não encontrado' });
+    }
+    
+    const pagamentos = await prisma.pagamento.findMany({
+      where: { parceiroId, pago: true },
+      include: {
+        venda: {
+          include: {
+            peca: true
+          }
+        }
+      },
+      orderBy: { dataPagamento: 'desc' }
+    });
+    
+    const total = pagamentos.reduce((sum, p) => sum + p.valorParceiro, 0);
+    
+    const recibo = {
+      parceiro: {
+        nome: parceiro.usuario.nome,
+        percentual: parceiro.percentual
+      },
+      pagamentos: pagamentos.map(p => ({
+        data: p.dataPagamento,
+        peca: p.venda.peca.codigoEtiqueta,
+        valorVenda: p.venda.valorVendido,
+        valorParceiro: p.valorParceiro
+      })),
+      total,
+      dataGeracao: new Date()
+    };
+    
+    res.json(recibo);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ erro: 'Erro ao gerar recibo' });
+  }
+});
+
+
 module.exports = router;
