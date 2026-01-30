@@ -5,18 +5,17 @@ const { authMiddleware, adminMiddleware } = require('../middleware/auth');
 
 const prisma = new PrismaClient();
 
-// Listar todos os tamanhos ativos
-router.get('/', authMiddleware, async (req, res) => {
+// Listar todos os tamanhos (inclusive inativos)
+router.get('/', async (req, res) => {
   try {
     const tamanhos = await prisma.tamanho.findMany({
-      where: { ativo: true },
       orderBy: { ordem: 'asc' }
+      // NÃO filtre por ativo aqui - retorna TODOS
     });
-
     res.json(tamanhos);
-  } catch (erro) {
-    console.error('Erro ao listar tamanhos:', erro);
-    res.status(500).json({ erro: 'Erro ao listar tamanhos' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ erro: 'Erro ao buscar tamanhos' });
   }
 });
 
