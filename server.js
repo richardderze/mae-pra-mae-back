@@ -2,6 +2,8 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const sacolinhasRoutes = require('./routes/sacolinhas');
+
 
 const app = express();
 
@@ -9,6 +11,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use('/api/sacolinhas', sacolinhasRoutes);
 
 // Servir arquivos estáticos (uploads)
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
