@@ -137,4 +137,53 @@ router.delete('/:id', authMiddleware, adminMiddleware, async (req, res) => {
   }
 });
 
+// Buscar compras do cliente
+router.get('/:id/compras', authMiddleware, async (req, res) => {
+  try {
+    const compras = await prisma.venda.findMany({
+      where: { clienteId: parseInt(req.params.id) },
+      include: {
+        peca: {
+          include: {
+            marca: true,
+            tamanho: true
+          }
+        }
+      },
+      orderBy: { dataVenda: 'desc' }
+    });
+    res.json(compras);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ erro: 'Erro ao buscar compras' });
+  }
+});
+
+// Buscar sacolinhas do cliente
+router.get('/:id/sacolinhas', authMiddleware, async (req, res) => {
+  try {
+    const sacolinhas = await prisma.sacolinha.findMany({
+      where: { clienteId: parseInt(req.params.id) },
+      include: {
+        pecas: {
+          include: {
+            peca: {
+              include: {
+                marca: true,
+                tamanho: true
+              }
+            }
+          }
+        }
+      },
+      orderBy: { criadoEm: 'desc' }
+    });
+    res.json(sacolinhas);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ erro: 'Erro ao buscar sacolinhas' });
+  }
+});
+
+
 module.exports = router;
