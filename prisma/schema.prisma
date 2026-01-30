@@ -66,7 +66,8 @@ model Peca {
   status          String   @default("disponivel") // "disponivel", "vendida", "curadoria"
   fotos           String[] // Array de URLs das fotos
   observacoes     String?
-  
+  sacolinhas      SacolinhaPeca[]
+
   // Relacionamentos
   parceiroId      Int
   marcaId         Int
@@ -131,7 +132,7 @@ model Cliente {
   ativo         Boolean  @default(true)
   criadoEm      DateTime @default(now())
   atualizadoEm  DateTime @updatedAt
-  
+  sacolinhas    Sacolinha[]
   compras       Venda[]  @relation("ClienteCompras")
 }
 
@@ -149,5 +150,31 @@ model Venda {
   pagamento       Pagamento?
   
   criadoEm        DateTime @default(now())
+}
+
+model Sacolinha {
+  id              Int      @id @default(autoincrement())
+  clienteId       Int
+  cliente         Cliente  @relation(fields: [clienteId], references: [id])
+  status          String   @default("aguardando_envio") // aguardando_envio, enviada, entregue
+  dataEnvio       DateTime?
+  valorFrete      Float?
+  codigoRastreio  String?
+  observacoes     String?
+  criadoEm        DateTime @default(now())
+  atualizadoEm    DateTime @updatedAt
+  
+  pecas           SacolinhaPeca[]
+}
+
+model SacolinhaPeca {
+  id            Int        @id @default(autoincrement())
+  sacolinhaId   Int
+  pecaId        Int
+  sacolinha     Sacolinha  @relation(fields: [sacolinhaId], references: [id], onDelete: Cascade)
+  peca          Peca       @relation(fields: [pecaId], references: [id])
+  adicionadoEm  DateTime   @default(now())
+  
+  @@unique([sacolinhaId, pecaId])
 }
 
