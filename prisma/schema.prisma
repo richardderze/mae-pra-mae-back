@@ -114,3 +114,40 @@ model Pagamento {
   criadoEm        DateTime @default(now())
   atualizadoEm    DateTime @updatedAt
 }
+
+
+model Cliente {
+  id            Int      @id @default(autoincrement())
+  nome          String
+  email         String   @unique
+  senha         String
+  telefone      String?
+  endereco      String?
+  cep           String?
+  cidade        String?
+  estado        String?
+  observacoes   String?
+  tipo          String   @default("cliente")
+  ativo         Boolean  @default(true)
+  criadoEm      DateTime @default(now())
+  atualizadoEm  DateTime @updatedAt
+  
+  compras       Venda[]  @relation("ClienteCompras")
+}
+
+model Venda {
+  id              Int      @id @default(autoincrement())
+  dataVenda       DateTime @default(now())
+  valorVendido    Float
+  
+  pecaId          Int
+  peca            Peca     @relation(fields: [pecaId], references: [id])
+  
+  clienteId       Int?
+  cliente         Cliente? @relation("ClienteCompras", fields: [clienteId], references: [id])
+  
+  pagamento       Pagamento?
+  
+  criadoEm        DateTime @default(now())
+}
+
