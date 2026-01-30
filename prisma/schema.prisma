@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -15,11 +12,10 @@ model Usuario {
   nome      String
   email     String   @unique
   senha     String
-  tipo      String   // "admin" ou "parceiro"
+  tipo      String
   ativo     Boolean  @default(true)
   criadoEm  DateTime @default(now())
   
-  // Relacionamentos
   parceiro  Parceiro?
 }
 
@@ -27,11 +23,10 @@ model Parceiro {
   id              Int      @id @default(autoincrement())
   usuarioId       Int      @unique
   telefone        String?
-  percentual      Float    @default(50.0) // Percentual do parceiro na venda
+  percentual      Float    @default(50.0)
   criadoEm        DateTime @default(now())
   
-  // Relacionamentos
-  usuario         Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  usuario         Usuario     @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
   pecas           Peca[]
   pagamentos      Pagamento[]
 }
@@ -42,18 +37,16 @@ model Marca {
   ativo     Boolean  @default(true)
   criadoEm  DateTime @default(now())
   
-  // Relacionamentos
   pecas     Peca[]
 }
 
 model Tamanho {
   id        Int      @id @default(autoincrement())
   nome      String   @unique
-  ordem     Int      @default(0) // Para ordenar os tamanhos (RN, P, M, G, etc)
+  ordem     Int      @default(0)
   ativo     Boolean  @default(true)
   criadoEm  DateTime @default(now())
   
-  // Relacionamentos
   pecas     Peca[]
 }
 
@@ -63,12 +56,10 @@ model Peca {
   dataEntrada     DateTime @default(now())
   valorCusto      Float
   valorVenda      Float
-  status          String   @default("disponivel") // "disponivel", "vendida", "curadoria"
-  fotos           String[] // Array de URLs das fotos
+  status          String   @default("disponivel")
+  fotos           String[]
   observacoes     String?
-  sacolinhas      SacolinhaPeca[]
-
-  // Relacionamentos
+  
   parceiroId      Int
   marcaId         Int
   tamanhoId       Int
@@ -77,45 +68,12 @@ model Peca {
   marca           Marca    @relation(fields: [marcaId], references: [id])
   tamanho         Tamanho  @relation(fields: [tamanhoId], references: [id])
   
-  // Venda
   vendas          Venda[]
+  sacolinhas      SacolinhaPeca[]
   
   criadoEm        DateTime @default(now())
   atualizadoEm    DateTime @updatedAt
 }
-
-model Venda {
-  id              Int      @id @default(autoincrement())
-  dataVenda       DateTime @default(now())
-  valorVendido    Float
-  
-  // Relacionamentos
-  pecaId          Int
-  peca            Peca     @relation(fields: [pecaId], references: [id])
-  
-  pagamento       Pagamento?
-  
-  criadoEm        DateTime @default(now())
-}
-
-model Pagamento {
-  id              Int      @id @default(autoincrement())
-  vendaId         Int      @unique
-  parceiroId      Int
-  valorParceiro   Float
-  percentual      Float
-  pago            Boolean  @default(false)
-  dataPagamento   DateTime?
-  observacoes     String?
-  
-  // Relacionamentos
-  venda           Venda    @relation(fields: [vendaId], references: [id])
-  parceiro        Parceiro @relation(fields: [parceiroId], references: [id])
-  
-  criadoEm        DateTime @default(now())
-  atualizadoEm    DateTime @updatedAt
-}
-
 
 model Cliente {
   id            Int      @id @default(autoincrement())
@@ -132,15 +90,49 @@ model Cliente {
   ativo         Boolean  @default(true)
   criadoEm      DateTime @default(now())
   atualizadoEm  DateTime @updatedAt
+  
+  compras       Venda[]      @relation("ClienteCompras")
   sacolinhas    Sacolinha[]
-  compras       Venda[]  @relation("ClienteCompras")
+}
+
+model Venda {
+  id              Int      @id @default(autoincrement())
+  dataVenda       DateTime @default(now())
+  valorVendido    Float
+  
+  pecaId          Int
+  peca            Peca     @relation(fields: [pecaId], references: [id])
+  
+  clienteId       Int?
+  cliente         Cliente? @relation("ClienteCompras", fields: [clienteId], references: [id])
+  
+  pagamento       Pagamento?
+  
+  criadoEm        DateTime @default(now())
+}
+
+model Pagamento {
+  id              Int      @id @default(autoincrement())
+  vendaId         Int      @unique
+  parceiroId      Int
+  valorParceiro   Float
+  percentual      Float
+  pago            Boolean  @default(false)
+  dataPagamento   DateTime?
+  observacoes     String?
+  
+  venda           Venda    @relation(fields: [vendaId], references: [id])
+  parceiro        Parceiro @relation(fields: [parceiroId], references: [id])
+  
+  criadoEm        DateTime @default(now())
+  atualizadoEm    DateTime @updatedAt
 }
 
 model Sacolinha {
   id              Int      @id @default(autoincrement())
   clienteId       Int
   cliente         Cliente  @relation(fields: [clienteId], references: [id])
-  status          String   @default("aguardando_envio") // aguardando_envio, enviada, entregue
+  status          String   @default("aguardando_envio")
   dataEnvio       DateTime?
   valorFrete      Float?
   codigoRastreio  String?
@@ -161,4 +153,3 @@ model SacolinhaPeca {
   
   @@unique([sacolinhaId, pecaId])
 }
-
