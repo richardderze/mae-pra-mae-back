@@ -5,7 +5,7 @@ const { authMiddleware, adminMiddleware } = require('../middleware/auth');
 
 const prisma = new PrismaClient();
 
-// Listar todas as sacolinhas (apenas admin)
+// Listar todas as sacolinhas
 router.get('/', authMiddleware, adminMiddleware, async (req, res) => {
   try {
     const sacolinhas = await prisma.sacolinha.findMany({
@@ -17,17 +17,15 @@ router.get('/', authMiddleware, adminMiddleware, async (req, res) => {
               include: {
                 marca: true,
                 tamanho: true,
-                parceiro: {
-                  include: {
-                    usuario: true
-                  }
-                }
+                tipoPeca: true
               }
             }
           }
         }
       },
-      orderBy: { criadoEm: 'desc' }
+      orderBy: {
+        criadoEm: 'desc'
+      }
     });
     res.json(sacolinhas);
   } catch (error) {
@@ -49,6 +47,7 @@ router.get('/:id', authMiddleware, async (req, res) => {
               include: {
                 marca: true,
                 tamanho: true,
+                tipoPeca: true,
                 parceiro: {
                   include: {
                     usuario: true
@@ -72,12 +71,12 @@ router.get('/:id', authMiddleware, async (req, res) => {
   }
 });
 
-// Adicionar peça à sacolinha (ao fazer venda)
+// Adicionar peça à sacolinha
 router.post('/:clienteId/adicionar-peca', authMiddleware, adminMiddleware, async (req, res) => {
   try {
-    const { pecaId } = req.body;
     const clienteId = parseInt(req.params.clienteId);
-    
+    const { pecaId } = req.body;
+
     // Buscar ou criar sacolinha aguardando envio
     let sacolinha = await prisma.sacolinha.findFirst({
       where: {
@@ -85,13 +84,16 @@ router.post('/:clienteId/adicionar-peca', authMiddleware, adminMiddleware, async
         status: 'aguardando_envio'
       }
     });
-    
+
     if (!sacolinha) {
       sacolinha = await prisma.sacolinha.create({
-        data: { clienteId }
+        data: {
+          clienteId,
+          status: 'aguardando_envio'
+        }
       });
     }
-    
+
     // Adicionar peça à sacolinha
     await prisma.sacolinhaPeca.create({
       data: {
@@ -99,8 +101,27 @@ router.post('/:clienteId/adicionar-peca', authMiddleware, adminMiddleware, async
         pecaId: parseInt(pecaId)
       }
     });
-    
-    res.json({ mensagem: 'Peça adicionada à sacolinha', sacolinha });
+
+    // Retornar sacolinha atualizada
+    const sacolinhaAtualizada = await prisma.sacolinha.findUnique({
+      where: { id: sacolinha.id },
+      include: {
+        cliente: true,
+        pecas: {
+          include: {
+            peca: {
+              include: {
+                marca: true,
+                tamanho: true,
+                tipoPeca: true
+              }
+            }
+          }
+        }
+      }
+    });
+
+    res.json(sacolinhaAtualizada);
   } catch (error) {
     console.error(error);
     res.status(500).json({ erro: 'Erro ao adicionar peça à sacolinha' });
@@ -112,41 +133,86 @@ router.delete('/:id/pecas/:pecaId', authMiddleware, adminMiddleware, async (req,
   try {
     const sacolinhaId = parseInt(req.params.id);
     const pecaId = parseInt(req.params.pecaId);
-    
+
     await prisma.sacolinhaPeca.deleteMany({
       where: {
         sacolinhaId,
         pecaId
       }
     });
-    
+
     res.json({ mensagem: 'Peça removida da sacolinha' });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ erro: 'Erro ao remover peça' });
+    res.status(500).json({ erro: 'Erro ao remover peça da sacolinha' });
   }
 });
 
 // Enviar sacolinha
 router.post('/:id/enviar', authMiddleware, adminMiddleware, async (req, res) => {
   try {
-    const { valorFrete, dataEnvio, codigoRastreio, observacoes } = req.body;
-    
+    const { valorFrete, codigoRastreio, observacoes } = req.body;
+
     const sacolinha = await prisma.sacolinha.update({
       where: { id: parseInt(req.params.id) },
       data: {
         status: 'enviada',
-        valorFrete: parseFloat(valorFrete),
-        dataEnvio: new Date(dataEnvio),
+        dataEnvio: new Date(),
+        valorFrete: valorFrete ? parseFloat(valorFrete) : null,
         codigoRastreio,
         observacoes
+      },
+      include: {
+        cliente: true,
+        pecas: {
+          include: {
+            peca: {
+              include: {
+                marca: true,
+                tamanho: true,
+                tipoPeca: true
+              }
+            }
+          }
+        }
       }
     });
-    
-    res.json({ mensagem: 'Sacolinha enviada com sucesso', sacolinha });
+
+    res.json(sacolinha);
   } catch (error) {
     console.error(error);
     res.status(500).json({ erro: 'Erro ao enviar sacolinha' });
+  }
+});
+
+// Marcar sacolinha como entregue
+router.post('/:id/entregar', authMiddleware, adminMiddleware, async (req, res) => {
+  try {
+    const sacolinha = await prisma.sacolinha.update({
+      where: { id: parseInt(req.params.id) },
+      data: {
+        status: 'entregue'
+      },
+      include: {
+        cliente: true,
+        pecas: {
+          include: {
+            peca: {
+              include: {
+                marca: true,
+                tamanho: true,
+                tipoPeca: true
+              }
+            }
+          }
+        }
+      }
+    });
+
+    res.json(sacolinha);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ erro: 'Erro ao marcar sacolinha como entregue' });
   }
 });
 
