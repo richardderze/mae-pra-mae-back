@@ -17,6 +17,7 @@ const pecasRoutes = require('./routes/pecas');
 const parceirosRoutes = require('./routes/parceiros');
 const marcasRoutes = require('./routes/marcas');
 const tamanhosRoutes = require('./routes/tamanhos');
+const tiposPecaRoutes = require('./routes/tiposPeca');
 const vendasRoutes = require('./routes/vendas');
 const pagamentosRoutes = require('./routes/pagamentos');
 const clientesRoutes = require('./routes/clientes');
@@ -27,6 +28,7 @@ app.use('/api/pecas', pecasRoutes);
 app.use('/api/parceiros', parceirosRoutes);
 app.use('/api/marcas', marcasRoutes);
 app.use('/api/tamanhos', tamanhosRoutes);
+app.use('/api/tipos-peca', tiposPecaRoutes);
 app.use('/api/vendas', vendasRoutes);
 app.use('/api/pagamentos', pagamentosRoutes);
 app.use('/api/clientes', clientesRoutes);
@@ -52,6 +54,7 @@ app.get('/', (req, res) => {
       parceiros: '/api/parceiros',
       marcas: '/api/marcas',
       tamanhos: '/api/tamanhos',
+      tiposPeca: '/api/tipos-peca',
       vendas: '/api/vendas',
       pagamentos: '/api/pagamentos',
       clientes: '/api/clientes'
