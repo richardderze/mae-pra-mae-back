@@ -122,7 +122,7 @@ router.get('/:id', authMiddleware, async (req, res) => {
 });
 
 // Criar nova peça
-router.post('/', authMiddleware, upload.array('fotos', 5), async (req, res) => {
+router.post('/', authMiddleware, adminMiddleware, async (req, res) => {
   try {
     const { 
       codigoEtiqueta, 
