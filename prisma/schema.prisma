@@ -50,9 +50,19 @@ model Tamanho {
   pecas     Peca[]
 }
 
+model TipoPeca {
+  id        Int      @id @default(autoincrement())
+  nome      String   @unique
+  ativo     Boolean  @default(true)
+  criadoEm  DateTime @default(now())
+  
+  pecas     Peca[]
+}
+
 model Peca {
   id              Int      @id @default(autoincrement())
   codigoEtiqueta  String   @unique
+  nome            String
   dataEntrada     DateTime @default(now())
   valorCusto      Float
   valorVenda      Float
@@ -63,10 +73,12 @@ model Peca {
   parceiroId      Int
   marcaId         Int
   tamanhoId       Int
+  tipoPecaId      Int
   
-  parceiro        Parceiro @relation(fields: [parceiroId], references: [id])
-  marca           Marca    @relation(fields: [marcaId], references: [id])
-  tamanho         Tamanho  @relation(fields: [tamanhoId], references: [id])
+  parceiro        Parceiro  @relation(fields: [parceiroId], references: [id])
+  marca           Marca     @relation(fields: [marcaId], references: [id])
+  tamanho         Tamanho   @relation(fields: [tamanhoId], references: [id])
+  tipoPeca        TipoPeca  @relation(fields: [tipoPecaId], references: [id])
   
   vendas          Venda[]
   sacolinhas      SacolinhaPeca[]
