@@ -180,7 +180,7 @@ router.post('/', authMiddleware, adminMiddleware, async (req, res) => {
 });
 
 // Atualizar peça
-router.put('/:id', authMiddleware, upload.array('novasFotos', 5), async (req, res) => {
+router.put('/:id', authMiddleware, adminMiddleware, async (req, res) => {
   try {
     const { id } = req.params;
     const { 
