@@ -23,6 +23,7 @@ const pagamentosRoutes = require('./routes/pagamentos');
 const clientesRoutes = require('./routes/clientes');
 const tiposPecaRoutes = require('./routes/tiposPeca');
 const sacolinhasRoutes = require('./routes/sacolinhas');
+const usuariosRoutes = require('./routes/usuarios');
 
 // Registrar rotas
 app.use('/api/auth', authRoutes);
@@ -35,6 +36,7 @@ app.use('/api/pagamentos', pagamentosRoutes);
 app.use('/api/clientes', clientesRoutes);
 app.use('/api/tipos-peca', tiposPecaRoutes);
 app.use('/api/sacolinhas', sacolinhasRoutes);
+app.use('/api/usuarios', usuariosRoutes);
 
 // Rota de health check
 app.get('/api/health', (req, res) => {
