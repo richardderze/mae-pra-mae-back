@@ -5,176 +5,114 @@ const { authMiddleware, adminMiddleware } = require('../middleware/auth');
 
 const prisma = new PrismaClient();
 
-// Listar peças com filtros
+// Listar todas as peças
 router.get('/', authMiddleware, async (req, res) => {
   try {
-    const { status, parceiroId } = req.query;
-    
-    const where = {};
-    
-    // Filtro de status
-    if (status) {
-      where.status = status;
-    }
-    
-    // Se for parceiro, só mostra suas peças
-    if (req.usuario.tipo === 'parceiro') {
-      where.parceiroId = req.usuario.parceiroId;
-    } else if (parceiroId) {
-      // Admin pode filtrar por parceiro
-      where.parceiroId = parseInt(parceiroId);
-    }
-
     const pecas = await prisma.peca.findMany({
-      where,
       include: {
         parceiro: {
           include: {
-            usuario: {
-              select: {
-                nome: true
-              }
-            }
+            usuario: true
           }
         },
         marca: true,
         tamanho: true,
-        vendas: true
+        tipoPeca: true
       },
       orderBy: {
-        dataEntrada: 'desc'
+        criadoEm: 'desc'
       }
     });
-
-    // Calcular margem para cada peça
-    const pecasComMargem = pecas.map(peca => {
-      const margemAbsoluta = peca.valorVenda - peca.valorCusto;
-      const margemPercentual = peca.valorCusto > 0 
-        ? ((margemAbsoluta / peca.valorCusto) * 100).toFixed(2)
-        : 0;
-
-      return {
-        ...peca,
-        margemAbsoluta: margemAbsoluta.toFixed(2),
-        margemPercentual: parseFloat(margemPercentual)
-      };
-    });
-
-    res.json(pecasComMargem);
-  } catch (erro) {
-    console.error('Erro ao listar peças:', erro);
-    res.status(500).json({ erro: 'Erro ao listar peças' });
+    res.json(pecas);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ erro: 'Erro ao buscar peças' });
   }
 });
 
-// Obter uma peça específica
+// Buscar peça por ID
 router.get('/:id', authMiddleware, async (req, res) => {
   try {
-    const { id } = req.params;
-
     const peca = await prisma.peca.findUnique({
-      where: { id: parseInt(id) },
+      where: { id: parseInt(req.params.id) },
       include: {
         parceiro: {
           include: {
-            usuario: {
-              select: {
-                nome: true,
-                email: true
-              }
-            }
+            usuario: true
           }
         },
         marca: true,
         tamanho: true,
-        vendas: {
-          include: {
-            pagamento: true
-          }
-        }
+        tipoPeca: true
       }
     });
-
+    
     if (!peca) {
       return res.status(404).json({ erro: 'Peça não encontrada' });
     }
-
-    // Parceiros só podem ver suas próprias peças
-    if (req.usuario.tipo === 'parceiro' && peca.parceiroId !== req.usuario.parceiroId) {
-      return res.status(403).json({ erro: 'Acesso negado' });
-    }
-
-    // Calcular margem
-    const margemAbsoluta = peca.valorVenda - peca.valorCusto;
-    const margemPercentual = peca.valorCusto > 0 
-      ? ((margemAbsoluta / peca.valorCusto) * 100).toFixed(2)
-      : 0;
-
-    res.json({
-      ...peca,
-      margemAbsoluta: margemAbsoluta.toFixed(2),
-      margemPercentual: parseFloat(margemPercentual)
-    });
-  } catch (erro) {
-    console.error('Erro ao obter peça:', erro);
-    res.status(500).json({ erro: 'Erro ao obter peça' });
+    
+    res.json(peca);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ erro: 'Erro ao buscar peça' });
   }
 });
 
-// Criar nova peça
+// Criar peça
 router.post('/', authMiddleware, adminMiddleware, async (req, res) => {
   try {
-    const { 
-      codigoEtiqueta, 
-      valorCusto, 
-      valorVenda, 
+    const {
+      codigoEtiqueta,
+      nome,
       parceiroId,
       marcaId,
       tamanhoId,
-      status,
-      observacoes,
-      dataEntrada
+      tipoPecaId,
+      valorCusto,
+      valorVenda,
+      observacoes
     } = req.body;
 
-    if (!codigoEtiqueta || !valorCusto || !valorVenda || !parceiroId || !marcaId || !tamanhoId) {
-      return res.status(400).json({ erro: 'Dados obrigatórios faltando' });
+    // Validar campos obrigatórios
+    if (!codigoEtiqueta || !nome || !parceiroId || !marcaId || !tamanhoId || !tipoPecaId) {
+      return res.status(400).json({ 
+        erro: 'Campos obrigatórios: codigoEtiqueta, nome, parceiroId, marcaId, tamanhoId, tipoPecaId' 
+      });
     }
-
-    // Processar fotos
-    const fotos = req.files ? req.files.map(file => `/uploads/${file.filename}`) : [];
 
     const peca = await prisma.peca.create({
       data: {
         codigoEtiqueta,
-        valorCusto: parseFloat(valorCusto),
-        valorVenda: parseFloat(valorVenda),
+        nome,
         parceiroId: parseInt(parceiroId),
         marcaId: parseInt(marcaId),
         tamanhoId: parseInt(tamanhoId),
-        status: status || 'disponivel',
+        tipoPecaId: parseInt(tipoPecaId),
+        valorCusto: parseFloat(valorCusto),
+        valorVenda: parseFloat(valorVenda),
         observacoes,
-        fotos,
-        dataEntrada: dataEntrada ? new Date(dataEntrada) : new Date()
+        fotos: []
       },
       include: {
         parceiro: {
           include: {
-            usuario: {
-              select: { nome: true }
-            }
+            usuario: true
           }
         },
         marca: true,
-        tamanho: true
+        tamanho: true,
+        tipoPeca: true
       }
     });
 
     res.status(201).json(peca);
-  } catch (erro) {
-    console.error('Erro ao criar peça:', erro);
-    if (erro.code === 'P2002') {
+  } catch (error) {
+    console.error('Erro ao criar peça:', error);
+    
+    if (error.code === 'P2002') {
       return res.status(400).json({ erro: 'Código de etiqueta já existe' });
     }
+    
     res.status(500).json({ erro: 'Erro ao criar peça' });
   }
 });
@@ -182,64 +120,53 @@ router.post('/', authMiddleware, adminMiddleware, async (req, res) => {
 // Atualizar peça
 router.put('/:id', authMiddleware, adminMiddleware, async (req, res) => {
   try {
-    const { id } = req.params;
-    const { 
-      codigoEtiqueta, 
-      valorCusto, 
-      valorVenda, 
+    const {
+      codigoEtiqueta,
+      nome,
       parceiroId,
       marcaId,
       tamanhoId,
+      tipoPecaId,
+      valorCusto,
+      valorVenda,
       status,
-      observacoes,
-      fotosExistentes
+      observacoes
     } = req.body;
 
-    // Verificar se a peça existe
-    const pecaExistente = await prisma.peca.findUnique({
-      where: { id: parseInt(id) }
-    });
-
-    if (!pecaExistente) {
-      return res.status(404).json({ erro: 'Peça não encontrada' });
-    }
-
-    // Processar fotos
-    let fotos = fotosExistentes ? JSON.parse(fotosExistentes) : [];
-    if (req.files && req.files.length > 0) {
-      const novasFotos = req.files.map(file => `/uploads/${file.filename}`);
-      fotos = [...fotos, ...novasFotos];
-    }
-
     const peca = await prisma.peca.update({
-      where: { id: parseInt(id) },
+      where: { id: parseInt(req.params.id) },
       data: {
         codigoEtiqueta,
-        valorCusto: valorCusto ? parseFloat(valorCusto) : undefined,
-        valorVenda: valorVenda ? parseFloat(valorVenda) : undefined,
+        nome,
         parceiroId: parceiroId ? parseInt(parceiroId) : undefined,
         marcaId: marcaId ? parseInt(marcaId) : undefined,
         tamanhoId: tamanhoId ? parseInt(tamanhoId) : undefined,
+        tipoPecaId: tipoPecaId ? parseInt(tipoPecaId) : undefined,
+        valorCusto: valorCusto ? parseFloat(valorCusto) : undefined,
+        valorVenda: valorVenda ? parseFloat(valorVenda) : undefined,
         status,
-        observacoes,
-        fotos
+        observacoes
       },
       include: {
         parceiro: {
           include: {
-            usuario: {
-              select: { nome: true }
-            }
+            usuario: true
           }
         },
         marca: true,
-        tamanho: true
+        tamanho: true,
+        tipoPeca: true
       }
     });
 
     res.json(peca);
-  } catch (erro) {
-    console.error('Erro ao atualizar peça:', erro);
+  } catch (error) {
+    console.error(error);
+    
+    if (error.code === 'P2002') {
+      return res.status(400).json({ erro: 'Código de etiqueta já existe' });
+    }
+    
     res.status(500).json({ erro: 'Erro ao atualizar peça' });
   }
 });
@@ -247,26 +174,20 @@ router.put('/:id', authMiddleware, adminMiddleware, async (req, res) => {
 // Deletar peça
 router.delete('/:id', authMiddleware, adminMiddleware, async (req, res) => {
   try {
-    const { id } = req.params;
-
-    // Verificar se tem vendas
-    const vendasCount = await prisma.venda.count({
-      where: { pecaId: parseInt(id) }
+    await prisma.peca.delete({
+      where: { id: parseInt(req.params.id) }
     });
-
-    if (vendasCount > 0) {
+    
+    res.json({ mensagem: 'Peça deletada com sucesso' });
+  } catch (error) {
+    console.error(error);
+    
+    if (error.code === 'P2003') {
       return res.status(400).json({ 
-        erro: 'Não é possível deletar peça que já foi vendida' 
+        erro: 'Não é possível deletar: peça está vinculada a vendas ou sacolinhas' 
       });
     }
-
-    await prisma.peca.delete({
-      where: { id: parseInt(id) }
-    });
-
-    res.json({ mensagem: 'Peça deletada com sucesso' });
-  } catch (erro) {
-    console.error('Erro ao deletar peça:', erro);
+    
     res.status(500).json({ erro: 'Erro ao deletar peça' });
   }
 });
