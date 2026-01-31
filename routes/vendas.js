@@ -31,9 +31,11 @@ router.get('/', authMiddleware, async (req, res) => {
               }
             },
             marca: true,
-            tamanho: true
+            tamanho: true,
+            tipoPeca: true
           }
         },
+        cliente: true,
         pagamento: true
       },
       orderBy: {
@@ -248,77 +250,5 @@ router.delete('/:id', authMiddleware, adminMiddleware, async (req, res) => {
     res.status(400).json({ erro: erro.message || 'Erro ao deletar venda' });
   }
 });
-
-router.post('/', authMiddleware, adminMiddleware, async (req, res) => {
-  try {
-    const { pecaId, clienteId, valorVendido, dataVenda, envioImediato } = req.body;
-    
-    // Criar venda
-    const venda = await prisma.venda.create({
-      data: {
-        pecaId,
-        clienteId: clienteId || null,
-        valorVendido: parseFloat(valorVendido),
-        dataVenda: dataVenda ? new Date(dataVenda) : new Date()
-      },
-      include: {
-        peca: {
-          include: {
-            parceiro: true
-          }
-        }
-      }
-    });
-    
-    // Atualizar status da peça
-    await prisma.peca.update({
-      where: { id: pecaId },
-      data: { status: 'vendida' }
-    });
-    
-    // Se tem cliente e não é envio imediato, adicionar à sacolinha
-    if (clienteId && !envioImediato) {
-      let sacolinha = await prisma.sacolinha.findFirst({
-        where: {
-          clienteId,
-          status: 'aguardando_envio'
-        }
-      });
-      
-      if (!sacolinha) {
-        sacolinha = await prisma.sacolinha.create({
-          data: { clienteId }
-        });
-      }
-      
-      await prisma.sacolinhaPeca.create({
-        data: {
-          sacolinhaId: sacolinha.id,
-          pecaId
-        }
-      });
-    }
-    
-    // Criar pagamento para o parceiro
-    const percentual = venda.peca.parceiro.percentual;
-    const valorParceiro = (valorVendido * percentual) / 100;
-    
-    await prisma.pagamento.create({
-      data: {
-        vendaId: venda.id,
-        parceiroId: venda.peca.parceiroId,
-        valorParceiro,
-        percentual
-      }
-    });
-    
-    res.status(201).json(venda);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ erro: 'Erro ao criar venda' });
-  }
-});
-
-
 
 module.exports = router;
