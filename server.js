@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
-const tiposPecaRoutes = require('./routes/tiposPeca');
+
 
 dotenv.config();
 
@@ -21,6 +21,7 @@ const tamanhosRoutes = require('./routes/tamanhos');
 const vendasRoutes = require('./routes/vendas');
 const pagamentosRoutes = require('./routes/pagamentos');
 const clientesRoutes = require('./routes/clientes');
+const tiposPecaRoutes = require('./routes/tiposPeca');
 
 // Registrar rotas
 app.use('/api/auth', authRoutes);
