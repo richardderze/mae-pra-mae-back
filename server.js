@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
+const tiposPecaRoutes = require('./routes/tiposPeca');
 
 dotenv.config();
 
@@ -30,6 +31,7 @@ app.use('/api/tamanhos', tamanhosRoutes);
 app.use('/api/vendas', vendasRoutes);
 app.use('/api/pagamentos', pagamentosRoutes);
 app.use('/api/clientes', clientesRoutes);
+app.use('/api/tipos-peca', tiposPecaRoutes);
 
 // Rota de health check
 app.get('/api/health', (req, res) => {
