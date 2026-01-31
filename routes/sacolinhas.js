@@ -17,7 +17,12 @@ router.get('/', authMiddleware, adminMiddleware, async (req, res) => {
               include: {
                 marca: true,
                 tamanho: true,
-                tipoPeca: true
+                tipoPeca: true,
+                parceiro: {
+                  include: {
+                    usuario: true
+                  }
+                }
               }
             }
           }
