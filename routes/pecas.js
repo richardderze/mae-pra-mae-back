@@ -70,6 +70,7 @@ router.post('/', authMiddleware, adminMiddleware, async (req, res) => {
       tipoPecaId,
       valorCusto,
       valorVenda,
+      status,
       observacoes
     } = req.body;
 
@@ -90,6 +91,7 @@ router.post('/', authMiddleware, adminMiddleware, async (req, res) => {
         tipoPecaId: parseInt(tipoPecaId),
         valorCusto: parseFloat(valorCusto),
         valorVenda: parseFloat(valorVenda),
+        status: status || 'disponivel',
         observacoes,
         fotos: []
       },
